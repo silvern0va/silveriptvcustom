@@ -2,8 +2,8 @@ name: Update Playlist
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # Wakes up and runs every 6 hours
-  workflow_dispatch: # Allows you to trigger it manually
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,6 +19,6 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          git add master.m3u
-          git commit -m "Auto-update master playlist" || exit 0
+          git add master.m3u epg.xml
+          git commit -m "Auto-update master playlist and EPG" || exit 0
           git push
