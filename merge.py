@@ -1,6 +1,7 @@
+import gzip
 import urllib.request
+import xml.etree.ElementTree as ET
 
-# 1. Your dynamic M3U links
 m3u_sources = [
     "https://www.apsattv.com/localnow.m3u",
     "https://raw.githubusercontent.com/BuddyChewChew/tcl-playlist-generator/refs/heads/main/tcl.m3u8",
@@ -16,7 +17,6 @@ m3u_sources = [
     "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/playlists/roku_all.m3u"
 ]
 
-# 2. Dedicated EPG XML links for every network
 epg_sources = [
     "https://epgshare01.online/epgshare01/epg_ripper_ALL_SOURCES1.xml.gz",
     "https://raw.githubusercontent.com/BuddyChewChew/localnow-playlist-generator/refs/heads/main/epg.xml",
@@ -31,19 +31,42 @@ epg_sources = [
     "https://raw.githubusercontent.com/BuddyChewChew/airy-playlist-generator/main/airy_epg.xml"
 ]
 
-epg_string = ",".join(epg_sources)
-master_playlist = f'#EXTM3U x-tvg-url="{epg_string}"\n'
+# 1. Combine M3U Playlists
+master_playlist = '#EXTM3U x-tvg-url="epg.xml"\n'
 
 for url in m3u_sources:
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
         with urllib.request.urlopen(req) as response:
-            content = response.read().decode('utf-8')
+            content = response.read().decode('utf-8', errors='ignore')
             for line in content.splitlines():
                 if not line.startswith("#EXTM3U"):
                     master_playlist += line + "\n"
     except Exception as e:
-        print(f"Error reading {url}: {e}")
+        print(f"Error reading M3U {url}: {e}")
 
 with open("master.m3u", "w", encoding="utf-8") as f:
     f.write(master_playlist)
+
+# 2. Combine all EPG XML Files into a Single XML Document
+merged_tv = ET.Element("tv")
+
+for url in epg_sources:
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        with urllib.request.urlopen(req) as response:
+            content = response.read()
+            
+            # Decompress if gzipped (.gz)
+            if url.endswith(".gz") or content[:2] == b'\x1f\x8b':
+                content = gzip.decompress(content)
+                
+            root = ET.fromstring(content)
+            for child in root:
+                if child.tag in ["channel", "programme"]:
+                    merged_tv.append(child)
+    except Exception as e:
+        print(f"Error processing EPG {url}: {e}")
+
+tree = ET.ElementTree(merged_tv)
+tree.write("epg.xml", encoding="utf-8", xml_declaration=True)
