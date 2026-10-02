@@ -1,7 +1,11 @@
 import gzip
 import urllib.request
 import xml.etree.ElementTree as ET
+import re
+import tempfile
+import shutil
 
+# 1. Your Base M3U Playlists
 m3u_sources = [
     "https://www.apsattv.com/localnow.m3u",
     "https://raw.githubusercontent.com/BuddyChewChew/tcl-playlist-generator/refs/heads/main/tcl.m3u8",
@@ -17,30 +21,30 @@ m3u_sources = [
     "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/playlists/roku_all.m3u"
 ]
 
+# 2. Your core EPG sources (the script will auto-add others it finds)
 epg_sources = [
     "https://epgshare01.online/epgshare01/epg_ripper_ALL_SOURCES1.xml.gz",
-    "https://raw.githubusercontent.com/BuddyChewChew/localnow-playlist-generator/refs/heads/main/epg.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/pluto/main/pluto_all_epg.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/tubi-scraper/refs/heads/main/tubi_epg.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/epgs/samsungtvplus_all_epg.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/epgs/roku_all_epg.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/plex/main/epgs/plex_all_epg.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/xumo-playlist-generator/refs/heads/main/epg.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/lg-playlist-generator/refs/heads/main/lg_epg_us.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/tcl-playlist-generator/refs/heads/main/epg.xml",
-    "https://raw.githubusercontent.com/BuddyChewChew/airy-playlist-generator/main/airy_epg.xml"
+    "https://raw.githubusercontent.com/BuddyChewChew/localnow-playlist-generator/refs/heads/main/epg.xml"
 ]
 
-# 1. Combine M3U Playlists
 master_playlist = '#EXTM3U x-tvg-url="epg.xml"\n'
 
+print("Merging M3U lists and extracting dynamic EPG links...")
 for url in m3u_sources:
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     try:
         with urllib.request.urlopen(req) as response:
             content = response.read().decode('utf-8', errors='ignore')
             for line in content.splitlines():
-                if not line.startswith("#EXTM3U"):
+                if line.startswith("#EXTM3U"):
+                    # Dynamically scrape any hidden EPG URLs from the playlist headers
+                    match = re.search(r'x-tvg-url="([^"]+)"', line)
+                    if match:
+                        for u in match.group(1).split(','):
+                            u = u.strip()
+                            if u and u not in epg_sources:
+                                epg_sources.append(u)
+                else:
                     master_playlist += line + "\n"
     except Exception as e:
         print(f"Error reading M3U {url}: {e}")
@@ -48,25 +52,35 @@ for url in m3u_sources:
 with open("master.m3u", "w", encoding="utf-8") as f:
     f.write(master_playlist)
 
-# 2. Combine all EPG XML Files into a Single XML Document
-merged_tv = ET.Element("tv")
+print(f"Total EPG sources found: {len(epg_sources)}")
 
-for url in epg_sources:
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    try:
-        with urllib.request.urlopen(req) as response:
-            content = response.read()
-            
-            # Decompress if gzipped (.gz)
-            if url.endswith(".gz") or content[:2] == b'\x1f\x8b':
-                content = gzip.decompress(content)
+# 3. Stream-Parse the EPGs to bypass RAM limits
+print("Merging EPG XMLs...")
+with open("epg.xml", "wb") as out_f:
+    out_f.write(b'<?xml version="1.0" encoding="utf-8"?>\n<tv>\n')
+    
+    for url in epg_sources:
+        print(f"Processing EPG: {url}")
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        try:
+            # Download to a temporary disk file first so RAM stays empty
+            with tempfile.NamedTemporaryFile(delete=True) as temp:
+                with urllib.request.urlopen(req) as response:
+                    shutil.copyfileobj(response, temp)
                 
-            root = ET.fromstring(content)
-            for child in root:
-                if child.tag in ["channel", "programme"]:
-                    merged_tv.append(child)
-    except Exception as e:
-        print(f"Error processing EPG {url}: {e}")
+                temp.seek(0)
+                f_in = gzip.GzipFile(fileobj=temp) if url.endswith(".gz") else temp
+                
+                # Iteratively parse XML chunks and dump them to save memory
+                context = ET.iterparse(f_in, events=("end",))
+                for event, elem in context:
+                    if elem.tag in ["channel", "programme"]:
+                        out_f.write(ET.tostring(elem, encoding="utf-8"))
+                        out_f.write(b'\n')
+                        elem.clear() # Instantly frees the chunk from RAM
+        except Exception as e:
+            print(f"Error processing EPG {url}: {e}")
 
-tree = ET.ElementTree(merged_tv)
-tree.write("epg.xml", encoding="utf-8", xml_declaration=True)
+    out_f.write(b'</tv>\n')
+
+print("All done!")
