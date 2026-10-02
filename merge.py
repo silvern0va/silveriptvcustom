@@ -25,7 +25,8 @@ epg_sources = [
     "https://raw.githubusercontent.com/BuddyChewChew/localnow-playlist-generator/refs/heads/main/epg.xml"
 ]
 
-master_playlist = '#EXTM3U x-tvg-url="epg.xml"\n'
+# Point the master playlist to the new compressed file
+master_playlist = '#EXTM3U x-tvg-url="epg.xml.gz"\n'
 valid_ids = set()
 
 print("Merging M3U lists and extracting valid IDs...")
@@ -36,7 +37,6 @@ for url in m3u_sources:
             content = response.read().decode('utf-8', errors='ignore')
             for line in content.splitlines():
                 if line.startswith("#EXTM3U"):
-                    # Fix 1: Now catches both x-tvg-url and url-tvg formats
                     match = re.search(r'(?:x-tvg-url|url-tvg)=["\']([^"\']+)["\']', line)
                     if match:
                         for u in match.group(1).split(','):
@@ -45,7 +45,6 @@ for url in m3u_sources:
                                 epg_sources.append(u)
                 else:
                     if line.startswith("#EXTINF"):
-                        # Fix 2: Caches both tvg-id and tvg-name
                         id_match = re.search(r'tvg-id=["\']([^"\']+)["\']', line)
                         if id_match:
                             valid_ids.add(id_match.group(1))
@@ -62,8 +61,9 @@ with open("master.m3u", "w", encoding="utf-8") as f:
 print(f"Found {len(valid_ids)} unique channel identifiers.")
 print(f"Total EPG sources found: {len(epg_sources)}")
 
-print("Merging and Filtering EPG XMLs...")
-with open("epg.xml", "wb") as out_f:
+print("Merging, Filtering, and Compressing EPG XMLs...")
+# Write directly into a compressed gzip format
+with gzip.open("epg.xml.gz", "wb") as out_f:
     out_f.write(b'<?xml version="1.0" encoding="utf-8"?>\n<tv>\n')
     
     for url in epg_sources:
