@@ -19,6 +19,6 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          git add master.m3u epg.xml
+          git add master.m3u epg.xml.gz
           git commit -m "Auto-update master playlist and EPG" || exit 0
           git push
