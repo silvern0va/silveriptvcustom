@@ -5,9 +5,10 @@ import re
 import tempfile
 import shutil
 
-# M3U playlist sources
+# M3U playlist sources (all of these publish a matching EPG)
 m3u_sources = [
     "https://i.mjh.nz/SamsungTVPlus/us.m3u8",
+    "https://i.mjh.nz/Stirr/all.m3u8",
     "https://raw.githubusercontent.com/BuddyChewChew/tubi-scraper/refs/heads/main/tubi_playlist.m3u",
     "https://www.apsattv.com/localnow.m3u",
     "https://raw.githubusercontent.com/BuddyChewChew/roku-playlist-generator/refs/heads/main/roku.m3u",
@@ -16,7 +17,6 @@ m3u_sources = [
     "https://raw.githubusercontent.com/BuddyChewChew/airy-playlist-generator/main/airy_channels.m3u",
     "https://raw.githubusercontent.com/BuddyChewChew/tcl-playlist-generator/refs/heads/main/tcl.m3u8",
     "https://raw.githubusercontent.com/BuddyChewChew/pluto/main/pluto_us.m3u",
-    "https://raw.githubusercontent.com/BuddyChewChew/sports/refs/heads/main/liveeventsfilter.m3u8",
     "https://raw.githubusercontent.com/BuddyChewChew/plex/main/playlists/plex_us.m3u",
     "https://raw.githubusercontent.com/BuddyChewChew/plex/main/playlists/plex_gb.m3u",
     "https://raw.githubusercontent.com/BuddyChewChew/plex/main/playlists/plex_ca.m3u",
@@ -28,6 +28,7 @@ m3u_sources = [
 epg_sources = [
     "https://raw.githubusercontent.com/dp247/Freeview-EPG/master/epg.xml",
     "https://i.mjh.nz/SamsungTVPlus/us.xml.gz",
+    "https://i.mjh.nz/Stirr/all.xml",
     "https://raw.githubusercontent.com/BuddyChewChew/localnow-playlist-generator/refs/heads/main/epg.xml",
     "https://raw.githubusercontent.com/BuddyChewChew/airy-playlist-generator/main/airy_channels.xml",
 ]
