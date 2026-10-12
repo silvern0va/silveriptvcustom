@@ -17,11 +17,11 @@ m3u_sources = [
     "https://raw.githubusercontent.com/BuddyChewChew/airy-playlist-generator/main/airy_channels.m3u",
     "https://raw.githubusercontent.com/BuddyChewChew/tcl-playlist-generator/refs/heads/main/tcl.m3u8",
     "https://raw.githubusercontent.com/BuddyChewChew/pluto/main/pluto_us.m3u",
-    "https://raw.githubusercontent.com/BuddyChewChew/plex/main/playlists/plex_us.m3u",
-    "https://raw.githubusercontent.com/BuddyChewChew/plex/main/playlists/plex_gb.m3u",
-    "https://raw.githubusercontent.com/BuddyChewChew/plex/main/playlists/plex_ca.m3u",
-    "https://raw.githubusercontent.com/BuddyChewChew/plex/main/playlists/plex_au.m3u",
-    "https://raw.githubusercontent.com/BuddyChewChew/plex/main/playlists/plex_nz.m3u",
+    "https://raw.githubusercontent.com/BuddyChewChew/plex/refs/heads/main/playlists/plex_us.m3u",
+    "https://raw.githubusercontent.com/BuddyChewChew/plex/refs/heads/main/playlists/plex_gb.m3u",
+    "https://raw.githubusercontent.com/BuddyChewChew/plex/refs/heads/main/playlists/plex_au.m3u",
+    "https://raw.githubusercontent.com/BuddyChewChew/plex/refs/heads/main/playlists/plex_ca.m3u",
+    "https://raw.githubusercontent.com/BuddyChewChew/plex/refs/heads/main/playlists/plex_nz.m3u",
 ]
 
 # Explicit EPG sources (more get added from playlist headers automatically)
